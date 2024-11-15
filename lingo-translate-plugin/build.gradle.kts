@@ -1,7 +1,11 @@
 plugins {
+    id("maven-publish")
     `kotlin-dsl` // Necessary for writing Gradle plugins in Kotlin
     kotlin("plugin.serialization") version "2.0.20"
 }
+
+group = "com.github.megabreezy.lingo"
+version = "0.0.1"
 
 repositories {
     mavenCentral()
@@ -27,4 +31,15 @@ gradlePlugin {
 // Configure duplicate handling for resource processing
 tasks.named<ProcessResources>("processResources") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+            groupId = project.group.toString()
+            artifactId = project.name
+            version = project.version.toString()
+        }
+    }
 }

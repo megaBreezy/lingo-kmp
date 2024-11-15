@@ -11,7 +11,7 @@ class Lingo_Translate_Plugin : Plugin<Project>
         target.logger.lifecycle("Lingo_Translate_Plugin applied!")
 
         // Register the generate_translations task
-        target.tasks.register("generate_translations", Generate_Translations_Task::class.java)
+        val generate_translations_task = target.tasks.register("generate_translations", Generate_Translations_Task::class.java)
         {
             group = "translation"
             description = "Generates a Translations.kt file from JSON translation files."
@@ -28,6 +28,14 @@ class Lingo_Translate_Plugin : Plugin<Project>
                         }
                     }
             )
+        }
+
+        target.tasks.matching()
+        {
+            it.name in listOf("compileKotlin", "test", "build", "prepareKotlinIdeaImport")
+        }.forEach()
+        { task ->
+            task.dependsOn(generate_translations_task)
         }
     }
 }
