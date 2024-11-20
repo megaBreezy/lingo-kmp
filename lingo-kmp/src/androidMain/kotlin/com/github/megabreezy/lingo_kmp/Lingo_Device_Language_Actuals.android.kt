@@ -4,7 +4,7 @@ import java.util.Locale
 
 actual fun get_current_device_language(default_language_code: String): String = try
 {
-    Locale.getDefault().language
+    Locale.getDefault().toLanguageTag()
 }
 catch (_: Exception)
 {
