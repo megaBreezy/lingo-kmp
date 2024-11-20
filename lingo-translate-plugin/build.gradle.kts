@@ -1,4 +1,5 @@
 plugins {
+    id("signing")
     id("maven-publish")
     `kotlin-dsl` // Necessary for writing Gradle plugins in Kotlin
     kotlin("plugin.serialization") version "2.0.20"
@@ -41,6 +42,21 @@ publishing {
             groupId = project.group.toString()
             artifactId = project.name
             version = project.version.toString()
+        }
+    }
+
+    repositories {
+        maven {
+            name = "LingoPluginPortal" // A name specific to your project
+            url = uri("https://plugins.gradle.org/m2/") // Gradle Plugin Portal
+        }
+        maven {
+            name = "LingoSonatype"
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            credentials {
+                username = project.findProperty("ossrhUsername") as String? ?: ""
+                password = project.findProperty("ossrhPassword") as String? ?: ""
+            }
         }
     }
 }

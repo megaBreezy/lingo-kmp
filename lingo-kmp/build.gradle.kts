@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.vanniktech.mavenPublish)
+    alias(libs.plugins.signing)
 }
 
 group = "com.github.megabreezy.lingo"
@@ -55,4 +56,24 @@ publishing {
             version = project.version.toString()
         }
     }
+
+    repositories {
+        maven {
+            name = "LingoSonatype"
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            credentials {
+                username = project.findProperty("ossrhUsername") as String? ?: ""
+                password = project.findProperty("ossrhPassword") as String? ?: ""
+            }
+        }
+    }
+}
+
+signing {
+    useInMemoryPgpKeys(
+        project.findProperty("signing.keyId") as String?,
+        project.findProperty("signing.secretKey") as String?,
+        project.findProperty("signing.password") as String?
+    )
+    sign(publishing.publications)
 }

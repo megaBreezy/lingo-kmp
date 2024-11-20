@@ -2,7 +2,6 @@ package com.github.megabreezy.lingo.translate
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import java.io.File
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 class Lingo_Translate_Plugin : Plugin<Project>
