@@ -2,35 +2,39 @@ package com.github.megabreezy.lingo.translate
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import java.io.File
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 class Lingo_Translate_Plugin : Plugin<Project>
 {
-    override fun apply(target: Project)
+    override fun apply(project: Project)
     {
-        // For now, just log a message when the plugin is applied
-        target.logger.lifecycle("Lingo_Translate_Plugin applied!")
+        val generate_translations_task = project.tasks.register(
+            "generate_translations",
+            Generate_Translations_Task::class.java
+        ) {
+            group = "lingo"
+            description = "Generate a Translations.kt file from provided JSON files."
+        }
 
-        // Register the generate_translations task
-        val generate_translations_task = target.tasks.register("generate_translations", Generate_Translations_Task::class.java)
-        {
-            group = "translation"
-            description = "Generates a Translations.kt file from JSON translation files."
-            translation_file_dir = project.files(
-                project.rootProject.subprojects
-                    .mapNotNull { subproject ->
-                        val translations_path = subproject.file("src/commonMain/resources")
-                        if (translations_path.exists() && translations_path.isDirectory) {
-                            println("Found translations directory in ${subproject.name}: $translations_path")
-                            translations_path
-                        } else {
-                            println("No translations directory found in ${subproject.name}")
-                            null
-                        }
-                    }
+        project.plugins.withType(org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper::class.java) {
+            // Access the Kotlin Multiplatform extension
+            val kotlinExtension = project.extensions.findByType(KotlinMultiplatformExtension::class.java)
+            kotlinExtension?.sourceSets?.getByName("commonMain")?.kotlin?.srcDir(
+                "${project.buildDir}/generated/source/lingo"
             )
         }
 
-        target.tasks.matching()
+        project.afterEvaluate {
+            // Ensure the generated directory is included in the source set
+            project.extensions.findByType(KotlinMultiplatformExtension::class.java)
+                ?.sourceSets
+                ?.getByName("commonMain")
+                ?.kotlin
+                ?.srcDir("${project.buildDir}/generated/source/lingo")
+        }
+
+        project.tasks.matching()
         {
             it.name in listOf("compileKotlin", "test", "build", "prepareKotlinIdeaImport")
         }.forEach()

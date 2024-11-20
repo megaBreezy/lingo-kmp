@@ -15,6 +15,7 @@ repositories {
 dependencies {
     // Add the Kotlin standard library
     implementation(kotlin("stdlib"))
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.20")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 }
 
