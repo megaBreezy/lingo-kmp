@@ -5,7 +5,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import java.io.File
 
@@ -13,12 +13,12 @@ abstract class Generate_Translations_Task : DefaultTask() {
     @InputDirectory
     val input_dir = project.file("src/commonMain/resources/translations")
 
-    @OutputFile
-    val output_file = project.buildDir.resolve("generated/source/lingo/Translations.kt")
+    @OutputDirectory
+    val output_dir = project.buildDir.resolve("generated/source/lingo")
 
     @TaskAction
     fun generate_translations() {
-        logger.lifecycle("Generating Translations.kt and Translations_Initializer.kt...")
+        logger.lifecycle("Generating translations in: ${output_dir.absolutePath}")
 
         if (!input_dir.exists() || !input_dir.isDirectory) {
             logger.lifecycle("No translations directory found. Skipping translations generation.")
@@ -40,6 +40,30 @@ abstract class Generate_Translations_Task : DefaultTask() {
             }
         }
 
+        generate_translation_key_file(translations.keys)
+        generate_translations_file(translations)
+        generate_initializer_file()
+
+        logger.lifecycle("Generated translations successfully.")
+    }
+
+    private fun generate_translation_key_file(keys: Set<String>) {
+        val keys_content = """
+            |package com.github.megabreezy.lingo.generated
+            |
+            |import com.github.megabreezy.lingo_kmp.Translatable_Key
+            |
+            |sealed class Translation_Key(override val id: String) : Translatable_Key {
+            |${keys.joinToString("\n") { key ->
+            """    object ${key.replaceFirstChar { it.uppercase() }} : Translation_Key("$key")"""
+        }}
+            |}
+        """.trimMargin()
+
+        File(output_dir, "Translation_Key.kt").writeText(keys_content)
+    }
+
+    private fun generate_translations_file(translations: Map<String, Map<String, String>>) {
         val translations_content = """
             |package com.github.megabreezy.lingo.generated
             |
@@ -49,7 +73,7 @@ abstract class Generate_Translations_Task : DefaultTask() {
             """
                 |        "$key" to mapOf(
                 |${values.entries.joinToString(",\n") { (lang, value) ->
-                """            "$lang" to "$value" """
+                """            "$lang" to "$value""""
             }}
                 |        )
                 """.trimMargin()
@@ -58,37 +82,26 @@ abstract class Generate_Translations_Task : DefaultTask() {
             |}
         """.trimMargin()
 
+        File(output_dir, "Translations.kt").writeText(translations_content)
+    }
+
+    private fun generate_initializer_file() {
         val initializer_content = """
             |package com.github.megabreezy.lingo.generated
             |
             |import com.github.megabreezy.lingo_kmp.Lingo
             |
-            |object Translations_Initializer 
-            |{
-            |    init
-            |    {
-            |        Lingo.register_translations { Translations.get_all_translations() }
-            |    }
-            |
-            |    fun initialize()
-            |    {
+            |object Translations_Initializer {
+            |    fun initialize() {
             |        Lingo.register_translations { Translations.get_all_translations() }
             |    }
             |}
         """.trimMargin()
 
-        val output_dir = output_file.parentFile
-        output_dir.mkdirs()
-        output_file.writeText(translations_content)
-
-        val initializer_file = File(output_dir, "Translations_Initializer.kt")
-        initializer_file.writeText(initializer_content)
-
-        logger.lifecycle("Generated Translations.kt and Translations_Initializer.kt at ${output_dir.absolutePath}")
+        File(output_dir, "Translations_Initializer.kt").writeText(initializer_content)
     }
 
     private fun create_placeholder_files() {
-        val output_dir = output_file.parentFile
         output_dir.mkdirs()
 
         val placeholder_translations = """
@@ -111,8 +124,7 @@ abstract class Generate_Translations_Task : DefaultTask() {
             |}
         """.trimMargin()
 
-        output_file.writeText(placeholder_translations)
-        val initializer_file = File(output_file.parentFile, "Translations_Initializer.kt")
-        initializer_file.writeText(placeholder_initializer)
+        File(output_dir, "Translations.kt").writeText(placeholder_translations)
+        File(output_dir, "Translations_Initializer.kt").writeText(placeholder_initializer)
     }
 }
